@@ -4,3 +4,9 @@
 [submodule "lib/eigenda"]
 	path = lib/eigenda
 	url = https://github.com/Layr-Labs/eigenda
+[submodule "lib/eigenlayer-middleware"]
+	path = lib/eigenlayer-middleware
+	url = https://github.com/yetanotherco/eigenlayer-middleware
+[submodule "lib/aligned_layer"]
+	path = lib/aligned_layer
+	url = https://github.com/yetanotherco/aligned_layer

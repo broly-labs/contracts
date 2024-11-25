@@ -8,6 +8,8 @@ remappings = ['ds-test/=lib/forge-std/lib/ds-test/src/',
               'forge-std/=lib/forge-std/src/',
               '@openzeppelin/contracts/=node_modules/@openzeppelin/contracts/',
               '@openzeppelin/contracts-upgradeable/=node_modules/@openzeppelin/contracts-upgradeable/',
-              'eigenda/contracts/=node_modules/@eigenda/eigenda-utils',
+              '@eigenda/eigenda-utils/=node_modules/@eigenda/eigenda-utils',
+              'eigenlayer-middleware/=lib/eigenlayer-middleware/src/',
+              'eigenlayer-core/=lib/eigenlayer-middleware/lib/eigenlayer-contracts/src/',
               ]
 fs_permissions = [{ access = "read", path = "./"}]

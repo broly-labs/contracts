@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.12;
 
-import {EigenDARollupUtils} from "eigenda/contracts/libraries/EigenDARollupUtils.sol";
-import {IEigenDAServiceManager} from "eigenda/contracts/interfaces/IEigenDAServiceManager.sol";
+import {EigenDARollupUtils} from "@eigenda/eigenda-utils/libraries/EigenDARollupUtils.sol";
+import {IEigenDAServiceManager} from "@eigenda/eigenda-utils/interfaces/IEigenDAServiceManager.sol";
 import "./IDataAvailabilityProtocol.sol";
 
 /// @title Settlement Contract for Verified State Storage with EigenDA
@@ -71,9 +71,9 @@ contract SettlementContract {
         require(applicationId > 0, "Invalid applicationId");
         require(appIdOwner[applicationId].owner == msg.sender, "NOT_AUTH");
 
-        // dataAvailabilityProtocol.verifyMessage(
-        //     dataAvailability
-        // );
+        dataAvailabilityProtocol.verifyMessage(
+            dataAvailability
+        );
 
         currentCommitmentIndexes[applicationId]++;
 
