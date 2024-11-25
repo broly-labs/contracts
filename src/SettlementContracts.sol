@@ -35,23 +35,26 @@ contract SettlementContract {
         address batcherPaymentService;
     }
 
+    // appid -> version -> batch root
+    mapping(uint64 => mapping(uint64 => bytes32)) batchRoots;
     // appid -> current version
     mapping(uint64 => uint64) versions;
     // appid -> App details
     mapping(uint64 => AppId) appId;
 
     event StateUpdated(
-        uint64 indexed applicationId,
+        uint64 indexed _appId,
         uint64 indexed version, // what if we change it from use versions to only block.timestamp
+        bytes32 batchRoot,
         address confirmer,
         uint64 timestamp,
         bytes32 batchHeaderHash,
         uint32 blobIndex
     );
-    event ClaimAppID(uint64 indexed applicationId, address owner, bytes32 provingSystemId);
-    event TransferAppIdOwner(uint64 indexed applicationId, address from, address to);
+    event ClaimAppID(uint64 indexed _appId, address owner, bytes32 provingSystemId);
+    event TransferAppIdOwner(uint64 indexed _appId, address from, address to);
     event TransferOwner(address indexed from, address to);
-    event DeleteAppId(uint64 indexed applicationId);
+    event DeleteAppId(uint64 indexed _appId);
 
     constructor(
         address _eigenDAServiceManager, address payable _alignedServiceAddr
@@ -102,10 +105,18 @@ contract SettlementContract {
 
             // Increment the version number for the application
             versions[_appId] += 1;
+            uint64 newVersion = versions[_appId];
+
+            batchRoots[_appId][newVersion] = verificationData.batchMerkleRoot;
 
             emit StateUpdated(
-                _appId, versions[_appId], msg.sender, uint64(block.timestamp),
-                _batchHeaderHash, cert.blobVerificationProof.blobIndex
+                _appId,
+                newVersion,
+                verificationData.batchMerkleRoot,
+                msg.sender,
+                uint64(block.timestamp),
+                _batchHeaderHash,
+                cert.blobVerificationProof.blobIndex
             );
         } else {
             revert NewStateIsNotValid();
@@ -129,18 +140,46 @@ contract SettlementContract {
         require(appId[_appId].claimed, "NOT_CLAIMED");
         require(appId[_appId].owner == msg.sender, "NOT_OWNER");
 
+        uint64 versionsCount = versions[_appId];
+
+        for (uint64 i = 1; i <= versionsCount; i++) {
+            delete batchRoots[_appId][i];
+        }
         delete versions[_appId];
         delete appId[_appId];
 
         emit DeleteAppId(_appId);
     }
 
-    function getVersionsCount(uint64 _applicationId) public view returns (uint64) {
-        return versions[_applicationId];
+    /**
+     * @notice Retrieves the latest state root for a given application.
+     * @param _appId Identifier for the application.
+     * @return stateRoot The latest state root, or `bytes32(0)` if no state is found.
+     */
+    function getLatestStateRoot(uint64 _appId) public view returns (bytes32 stateRoot) {
+        uint64 latestVersion = versions[_appId];
+        if (latestVersion == 0) return bytes32(0); // No states for this application
+
+        return batchRoots[_appId][latestVersion];
     }
 
-    function getApp(uint64 _applicationId) public view returns (AppId memory) {
-        return appId[_applicationId];
+    /**
+     * @notice Retrieves the state commitment for a given application and version.
+     * @param _appId Identifier for the application.
+     * @param _version Specific version of the state to retrieve.
+     * @return stateRoot The bytes32.
+     */
+    function getStateByVersion(uint64 _appId, uint64 _version) public view returns (bytes32 stateRoot) {
+        require(_version > 0 && _version <= versions[_appId], "Version does not exist");
+        return batchRoots[_appId][_version];
+    }
+
+    function getVersionsCount(uint64 _appId) public view returns (uint64) {
+        return versions[_appId];
+    }
+
+    function getApp(uint64 _appId) public view returns (AppId memory) {
+        return appId[_appId];
     }
 
     function getEigenDAServiceManagerAddress() public view returns (address) {
@@ -151,10 +190,10 @@ contract SettlementContract {
         return address(aligned);
     }
 
-    function transferAppIdOwner(uint64 _applicationId, address _newOwner) public {
-        require(appId[_applicationId].owner == msg.sender, "NOT_AUTH");
-        appId[_applicationId].owner = _newOwner;
-        emit TransferAppIdOwner(_applicationId, msg.sender, _newOwner);
+    function transferAppIdOwner(uint64 _appId, address _newOwner) public {
+        require(appId[_appId].owner == msg.sender, "NOT_AUTH");
+        appId[_appId].owner = _newOwner;
+        emit TransferAppIdOwner(_appId, msg.sender, _newOwner);
     }
 
     function transferOwner(address _newOwner) public onlyOwner() {
