@@ -83,8 +83,6 @@ contract SettlementContract {
         ) {
             revert ProvingSystemIdIsNotValid(verificationData.provingSystemAuxDataCommitment);
         }
-        // TODO: verify - proofGeneratorAddr == appId owner
-        require(address(verificationData.proofGeneratorAddr) == msg.sender, "NOT_AUTH");
         // TODO: check aligned data == cert header - by X,Y commitment
 
         bool isNewStateVerified = aligned.verifyBatchInclusion(
